@@ -1,0 +1,415 @@
+; R1 = 80 
+; R2 = 58 
+; R3 = R1-R2     
+
+	    PROCESSOR   16F877A
+
+; PIC16F877A Configuration Bit Settings
+
+; Assembly source line config statements
+
+#include <xc.inc>
+PSECT code
+
+; CONFIG
+  CONFIG  FOSC	= XT      ; Oscillator Selection bits (XT oscillator)
+  CONFIG  WDTE	= OFF     ; Watchdog Timer Enable bit (WDT disabled)
+  CONFIG  PWRTE = OFF     ; Power-up Timer Enable bit (PWRT disabled)
+  CONFIG  BOREN = OFF     ; Brown-out Reset Enable bit (BOR disabled)
+  CONFIG  LVP	= OFF     ; Low-Voltage (Single-Supply) In-Circuit Serial Programming Enable bit (RB3 is digital I/O, HV on MCLR must be used for programming)
+  CONFIG  CPD	= OFF     ; Data EEPROM Memory Code Protection bit (Data EEPROM code protection off)
+  CONFIG  WRT	= OFF     ; Flash Program Memory Write Enable bits (Write protection off; all program memory may be written to by EECON control)
+  CONFIG  CP	= OFF     ; Flash Program Memory Code Protection bit (Code protection off)
+
+#define	    RP0	    5
+#define	    RP1	    6
+#define	    Z	    2
+#define	    DC	    1
+#define	    C	    0
+  
+VAR1	    EQU	    20H
+VAR2	    EQU	    21H
+DATO	    EQU	    22H	 
+CONTA	    EQU	    23H	
+CONTB	    EQU	    24H	
+CONTC	    EQU	    25H
+CONTD	    EQU	    26H
+CONTA2	    EQU	    27H	
+CONTB2	    EQU	    28H	
+CONTC2	    EQU	    2AH
+CONTD2	    EQU	    2BH
+VIS	    EQU	    2CH	
+VIS2	    EQU	    2EH	 
+DATO2	    EQU	    2FH
+	    
+;**********************************************
+	    ORG	    00H
+	    GOTO    SETTINGS
+	    ORG	    05H
+;**********************************************
+; Entrada   = 1	    
+; Salida    = 0  	    
+	    
+SETTINGS:   BCF	    STATUS,RP1	    ; RP1 = 0
+	    BSF	    STATUS,RP0	    ; RP0 = 1 Sel Banco 1
+
+; PORTA 6 bits como entrada
+; TRISA  = 0011 1111 = 0x3F 	    
+; ADCON1 = 0x06 para el puerto A y E.      
+	    
+	    MOVLW   0x06
+	    MOVWF   ADCON1
+	    
+	    MOVLW   0x3F
+	    MOVWF   TRISA	       
+	    
+; PORTB 8 bits como salida
+; PORTC 8 bits como salida
+; PORTD 8 bits como salida
+	    
+	    CLRF    TRISB	
+	    CLRF    TRISC
+	    CLRF    TRISD
+	    
+	    BCF	    STATUS,RP1	    ; RP1 = 0
+	    BCF	    STATUS,RP0	    ; RP0 = 0 Sel Banco 0
+
+	    MOVLW   0xFF
+	    MOVWF   PORTB
+	    MOVLW   0xFF
+	    MOVWF   PORTC
+	    MOVLW   0xFF
+	    MOVWF   PORTD
+	    CLRF    CONTA
+	    CLRF    CONTB
+	    CLRF    CONTC
+	    CLRF    CONTD
+	    CLRF    CONTA2
+	    CLRF    CONTB2
+	    CLRF    CONTC2
+	    CLRF    CONTD2
+	    
+	    MOVLW   0x00
+	    CLRF    CONTA
+	    MOVLW   0x00
+	    CLRF    CONTB
+	    MOVLW   0x00
+	    CLRF    CONTC
+	    MOVLW   0x00
+	    CLRF    CONTD
+	    MOVLW   0x00
+	    CLRF    CONTA2
+	    MOVLW   0x00
+	    CLRF    CONTB2
+	    MOVLW   0x00
+	    CLRF    CONTC2
+	    MOVLW   0x00
+	    CLRF    CONTD2
+
+INICIO:	   
+;************************************************
+;GOLES	 
+GOALS:	    BTFSS   PORTA,0
+	    GOTO    INC_GOAL
+	    GOTO    DEC_GOAL
+;INCREMENTO 
+INC_GOAL:   CALL    VISUALIZAR
+	    BTFSS   PORTE,2
+	    GOTO    GOL_VIS
+	    INCF    CONTC,F
+	    MOVLW   0x0A
+	    SUBWF   CONTC,W
+	    BTFSS   STATUS,Z
+	    GOTO    INICIO
+	    CLRF    CONTC
+	    
+	    INCF    CONTD,F	
+	    MOVLW   0x0A
+	    SUBWF   CONTD,W
+	    BTFSS   STATUS,Z
+	    GOTO    INICIO
+	    CLRF    CONTD
+	    
+	    
+GOL_VIS:    BTFSS   PORTE,1
+	    GOTO    INICIO
+	    INCF    CONTA,F
+	    MOVLW   0x0A
+	    SUBWF   CONTA,W
+	    BTFSS   STATUS,Z
+	    GOTO    INICIO
+	    CLRF    CONTA
+	    
+	    INCF    CONTB,F
+	    MOVLW   0x0A
+	    SUBWF   CONTB,W
+	    BTFSS   STATUS,Z
+	    GOTO    INICIO
+	    CLRF    CONTB
+	    GOTO    INICIO
+;decremento**************************	
+DEC_GOAL:   CALL    VISUALIZAR
+	    BTFSS   PORTE,2
+	    GOTO    GOL_VIS2
+	    DECF    CONTC,F
+	    MOVLW   0x0A
+	    SUBWF   CONTC,W
+	    BTFSS   STATUS,C
+	    GOTO    INICIO
+	    MOVLW   0x09
+	    MOVWF   CONTC
+	    
+	    
+	    DECF    CONTD,F	
+	    MOVLW   0x0A
+	    SUBWF   CONTD,W
+	    BTFSS   STATUS,C
+	    GOTO    INICIO
+	    CLRF    CONTD
+	    MOVLW   0x09
+	    MOVWF   CONTD
+	    GOTO    INICIO
+
+GOL_VIS2:   
+	    BTFSS   PORTE,1
+	    GOTO    INICIO
+	    DECF    CONTA,F
+	    MOVLW   0x0A
+	    SUBWF   CONTA,W
+	    BTFSS   STATUS,C
+	    GOTO    INICIO
+	    CLRF    CONTA
+	    MOVLW   0x09
+	    MOVWF   CONTA
+	    
+	    DECF    CONTB,F
+	    MOVLW   0x0A
+	    SUBWF   CONTB,W
+	    BTFSS   STATUS,C
+	    GOTO    INICIO
+	    CLRF    CONTB
+	    MOVLW   0x09
+	    MOVWF   CONTB
+	    GOTO    INICIO	
+            
+	    
+;******************************************************************************
+;MODO DE JUEGO
+GAME_MODE:  CALL    VISUALIZAR
+	    INCF    CONTA2,F
+	    MOVLW   0x0A
+	    SUBWF   CONTA2,W
+	    BTFSS   STATUS,Z
+	    GOTO    INICIO
+	    CLRF    CONTA2
+	    
+	    INCF    CONTB2,F	
+	    MOVLW   0x0A
+	    SUBWF   CONTB2,W
+	    BTFSS   STATUS,Z
+	    GOTO    INICIO
+	    CLRF    CONTB2
+	    GOTO    INICIO
+
+	    
+	    
+
+;***************************************************************
+;7 SEGMENTOS DISPLAYS
+VISUALIZAR: MOVLW   0x0F
+	    MOVWF   VIS
+	    
+LOOP_VIS:   MOVF    CONTA,W
+	    CALL    DISPLAY
+	    MOVWF   PORTB
+	    MOVLW   0x07
+	    MOVWF   PORTC
+	    
+	    CALL    DELAY
+	    
+	    MOVF    CONTB,W
+	    CALL    DISPLAY
+	    MOVWF   PORTB
+	    MOVLW   0x0B
+	    MOVWF   PORTC
+	    CALL    DELAY
+	    
+	    MOVF    CONTC,W
+	    CALL    DISPLAY
+	    MOVWF   PORTB
+	    MOVLW   0x0D
+	    MOVWF   PORTC
+	    CALL    DELAY
+	    
+	    MOVF    CONTD,W
+	    CALL    DISPLAY
+	    MOVWF   PORTB
+	    MOVLW   0x0E
+	    MOVWF   PORTC
+	    CALL    DELAY
+	    DECFSZ  VIS,F
+	    GOTO   LOOP_VIS 
+	    
+	    RETURN		    
+	    
+VISUALIZAR2: MOVLW   0x0F
+	     MOVWF   VIS2
+	    
+LOOP_VIS2:  MOVF    CONTA2,W
+	    CALL    DISPLAY2
+	    MOVWF   PORTD
+	    MOVLW   0x07
+	    MOVWF   PORTC
+	    
+	    CALL    DELAY
+	    
+	    MOVF    CONTB2,W
+	    CALL    DISPLAY2
+	    MOVWF   PORTD
+	    MOVLW   0x0B
+	    MOVWF   PORTC
+	    CALL    DELAY
+	    
+	    MOVF    CONTC2,W
+	    CALL    DISPLAY2
+	    MOVWF   PORTD
+	    MOVLW   0x0D
+	    MOVWF   PORTC
+	    CALL    DELAY
+	    
+	    MOVF    CONTD2,W
+	    CALL    DISPLAY2
+	    MOVWF   PORTD
+	    MOVLW   0x0E
+	    MOVWF   PORTC
+	    CALL    DELAY
+	    DECFSZ  VIS2,F
+	    GOTO    LOOP_VIS2
+	    
+	    RETURN
+	    
+	    
+	    
+DISPLAY:    MOVWF   DATO	    
+	    
+	    MOVLW   0x00
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x40
+	    
+	    MOVLW   0x01
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x79
+	  
+	    MOVLW   0x02
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x24
+    
+	    MOVLW   0x03
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x30
+	    
+	    MOVLW   0x04
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x19
+	    
+	    MOVLW   0x05
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x12
+	    
+	    MOVLW   0x06
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x02
+	    
+	    MOVLW   0x07
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x78
+	    
+	    MOVLW   0x08
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x00
+	    
+	    MOVLW   0x09
+	    SUBWF   DATO,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x10
+	    RETLW   0xFF
+	    
+DISPLAY2:   MOVWF   DATO2	    
+	    
+	    MOVLW   0x00
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x40
+	    
+	    MOVLW   0x01
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x79
+	  
+	    MOVLW   0x02
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x24
+    
+	    MOVLW   0x03
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x30
+	    
+	    MOVLW   0x04
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x19
+	    
+	    MOVLW   0x05
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x12
+	    
+	    MOVLW   0x06
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x02
+	    
+	    MOVLW   0x07
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x78
+	    
+	    MOVLW   0x08
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x00
+	    
+	    MOVLW   0x09
+	    SUBWF   DATO2,W
+	    BTFSC   STATUS,Z
+	    RETLW   0x10
+	    RETLW   0xFF
+;for(i=0;i<255;i++)
+    ;for(j=0;j<255;j++)	    
+	;for(k=0;k<255;k++)	   	    
+	    
+DELAY:	    MOVLW   0x03
+	    MOVWF   VAR1
+
+LOOPA:	    MOVLW   0xFF
+	    MOVWF   VAR2
+	    
+LOOPB:	    DECFSZ  VAR2,F
+	    GOTO    LOOPB
+	       
+	    DECFSZ  VAR1,F
+	    GOTO    LOOPA
+	    RETURN    
+	    
+	    END
